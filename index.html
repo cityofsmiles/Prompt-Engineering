@@ -1,20 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Full Screen Beamer PDF</title>
-<style>
-  html, body { margin:0; padding:0; height:100%; overflow:hidden; }
-  #pdf-container { width:100vw; height:100vh; background:#333; display:flex; justify-content:center; align-items:center; }
-  canvas { max-width:100%; max-height:100%; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer - Full Screen</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        #upload-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+        }
+
+        #upload-container h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        #upload-container p {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        #upload-btn {
+            padding: 15px 40px;
+            font-size: 1.1em;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #upload-btn:hover {
+            background: #0056b3;
+        }
+
+        #viewer-container {
+            display: none;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #2a2a2a;
+        }
+
+        #pdf-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border-radius: 50px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .control-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.5em;
+            cursor: pointer;
+            padding: 8px 15px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #page-info {
+            font-size: 1em;
+            padding: 0 10px;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        #fullscreen-btn {
+            background: #007bff;
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+
+        #fullscreen-btn:hover {
+            background: #0056b3;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            color: #aaa;
+        }
+    </style>
 </head>
 <body>
-<div id="pdf-container">
-    <canvas id="pdf-canvas"></canvas>
-</div>
+    <div id="upload-container">
+        <h1>📄 PDF Viewer</h1>
+        <p>Upload your LaTeX Beamer presentation</p>
+        <input type="file" id="file-input" accept=".pdf">
+        <button id="upload-btn">Choose PDF File</button>
+    </div>
 
-<script src="pdf.js"></script>
-<script src="viewer.js"></script>
+    <div id="viewer-container">
+        <canvas id="pdf-canvas"></canvas>
+        <div class="loading" id="loading">Loading PDF...</div>
+        <div id="controls">
+            <button class="control-btn" id="prev-btn" title="Previous">◀</button>
+            <span id="page-info">Page 1 of 1</span>
+            <button class="control-btn" id="next-btn" title="Next">▶</button>
+            <button class="control-btn" id="fullscreen-btn" title="Fullscreen">⛶ Fullscreen</button>
+        </div>
+    </div>
+
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let scale = 1.5;
+
+        const canvas = document.getElementById('pdf-canvas');
+        const ctx = canvas.getContext('2d');
+        const uploadContainer = document.getElementById('upload-container');
+        const viewerContainer = document.getElementById('viewer-container');
+        const loading = document.getElementById('loading');
+        const fileInput = document.getElementById('file-input');
+        const uploadBtn = document.getElementById('upload-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const pageInfo = document.getElementById('page-info');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+
+        uploadBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type === 'application/pdf') {
+                loadPDF(file);
+            }
+        });
+
+        function loadPDF(file) {
+            const fileReader = new FileReader();
+            fileReader.onload = function() {
+                const typedarray = new Uint8Array(this.result);
+                
+                pdfjsLib.getDocument(typedarray).promise.then((pdf) => {
+                    pdfDoc = pdf;
+                    uploadContainer.style.display = 'none';
+                    viewerContainer.style.display = 'block';
+                    renderPage(pageNum);
+                });
+            };
+            fileReader.readAsArrayBuffer(file);
+        }
+
+        function renderPage(num) {
+            pageRendering = true;
+            loading.style.display = 'block';
+
+            pdfDoc.getPage(num).then((page) => {
+                const viewport = page.getViewport({ scale: scale });
+                
+                // Fit to screen
+                const maxWidth = window.innerWidth * 0.95;
+                const maxHeight = window.innerHeight * 0.85;
+                const scaleX = maxWidth / viewport.width;
+                const scaleY = maxHeight / viewport.height;
+                const finalScale = Math.min(scaleX, scaleY) * scale;
+                
+                const scaledViewport = page.getViewport({ scale: finalScale });
+                
+                canvas.height = scaledViewport.height;
+                canvas.width = scaledViewport.width;
+
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: scaledViewport
+                };
+
+                const renderTask = page.render(renderContext);
+                renderTask.promise.then(() => {
+                    pageRendering = false;
+                    loading.style.display = 'none';
+                    
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            pageInfo.textContent = `Page ${num} of ${pdfDoc.numPages}`;
+            updateButtons();
+        }
+
+        function queueRenderPage(num) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                renderPage(num);
+            }
+        }
+
+        function onPrevPage() {
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function onNextPage() {
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        function updateButtons() {
+            prevBtn.disabled = pageNum <= 1;
+            nextBtn.disabled = pageNum >= pdfDoc.numPages;
+        }
+
+        prevBtn.addEventListener('click', onPrevPage);
+        nextBtn.addEventListener('click', onNextPage);
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (!pdfDoc) return;
+            
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                onPrevPage();
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault();
+                onNextPage();
+            }
+        });
+
+        // Fullscreen
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                viewerContainer.requestFullscreen().catch(err => {
+                    console.log('Fullscreen error:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            if (pdfDoc && pageNum) {
+                renderPage(pageNum);
+            }
+        });
+    </script>
 </body>
 </html>

@@ -88,6 +88,14 @@
             align-items: center;
             backdrop-filter: blur(10px);
             z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        #controls.visible {
+            opacity: 1;
+            pointer-events: all;
         }
 
         .control-btn {
@@ -211,9 +219,9 @@
                 // Calculate initial viewport
                 const viewport = page.getViewport({ scale: 1.0 });
                 
-                // Fit to screen - use more space
-                const maxWidth = window.innerWidth * 0.95;
-                const maxHeight = window.innerHeight * 0.85;
+                // Use full screen dimensions (account for controls)
+                const maxWidth = window.innerWidth;
+                const maxHeight = window.innerHeight - 100; // Leave space for controls
                 const scaleX = maxWidth / viewport.width;
                 const scaleY = maxHeight / viewport.height;
                 const baseScale = Math.min(scaleX, scaleY);

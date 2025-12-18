@@ -63,6 +63,7 @@
             height: 100vh;
             position: relative;
             background: #2a2a2a;
+            touch-action: pan-y pinch-zoom;
         }
 
         #pdf-canvas {
@@ -187,6 +188,26 @@
         const pageInfo = document.getElementById('page-info');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
 
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        let controlsTimeout;
+
+        function showControls() {
+            const controls = document.getElementById('controls');
+            controls.classList.add('visible');
+            
+            clearTimeout(controlsTimeout);
+            controlsTimeout = setTimeout(() => {
+                controls.classList.remove('visible');
+            }, 3000);
+        }
+
+        function hideControls() {
+            document.getElementById('controls').classList.remove('visible');
+        }
+
         uploadBtn.addEventListener('click', () => fileInput.click());
 
         fileInput.addEventListener('change', (e) => {
@@ -286,6 +307,56 @@
 
         prevBtn.addEventListener('click', onPrevPage);
         nextBtn.addEventListener('click', onNextPage);
+
+        // Touch/Swipe gestures
+        viewerContainer.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        viewerContainer.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, false);
+
+        function handleSwipe() {
+            const diffX = touchStartX - touchEndX;
+            const diffY = touchStartY - touchEndY;
+            const minSwipeDistance = 50;
+
+            // Horizontal swipe is more significant than vertical
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > minSwipeDistance) {
+                if (diffX > 0) {
+                    // Swipe left - next page
+                    onNextPage();
+                } else {
+                    // Swipe right - previous page
+                    onPrevPage();
+                }
+                showControls();
+            }
+        }
+
+        // Tap to show/hide controls
+        let tapTimeout;
+        viewerContainer.addEventListener('touchend', (e) => {
+            // Detect tap (not swipe)
+            const diffX = Math.abs(touchStartX - touchEndX);
+            const diffY = Math.abs(touchStartY - touchEndY);
+            
+            if (diffX < 10 && diffY < 10 && !e.target.closest('#controls')) {
+                clearTimeout(tapTimeout);
+                tapTimeout = setTimeout(() => {
+                    const controls = document.getElementById('controls');
+                    if (controls.classList.contains('visible')) {
+                        hideControls();
+                    } else {
+                        showControls();
+                    }
+                }, 100);
+            }
+        }, false);
 
         // Keyboard navigation
         document.addEventListener('keydown', (e) => {

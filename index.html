@@ -2,24 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>Math Prompt Engineering</title>
+    <title>Math Prompt Engineering - Lessig Style</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/theme/black.css">
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/math/math.js"></script>
+    
     <style>
-        body { background-color: black; }
-        .reveal h2 { font-weight: 800; font-size: 3.5em; color: #ffffff; }
-        /* Professional Math Highlight Color */
-        .highlight { color: #42afe3; } 
-        #start-btn {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px 40px; font-size: 24px; cursor: pointer;
-            background: #42afe3; color: white; border: none; border-radius: 5px; z-index: 999;
+        :root {
+            --highlight-color: #42afe3; /* Professional Math Blue */
         }
+        body { background-color: #000; }
+        .reveal { background-color: #000; }
+        
+        /* Typography for Lessig Method */
+        .reveal h1 { font-size: 4em !important; font-weight: 800; color: var(--highlight-color); text-transform: uppercase; }
+        .reveal h2 { font-size: 3em !important; font-weight: 700; line-height: 1.2; }
+        .reveal .highlight { color: var(--highlight-color); }
+        
+        /* Image Scaling for Landscape */
+        .slide-image {
+            max-height: 75vh !important;
+            width: auto;
+            border: 3px solid #333;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(66, 175, 227, 0.3);
+        }
+
+        /* Start Button Overlay */
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        #start-btn {
+            padding: 25px 50px; font-size: 28px; font-weight: bold;
+            cursor: pointer; background: var(--highlight-color);
+            color: white; border: none; border-radius: 50px;
+            transition: transform 0.2s ease;
+        }
+        #start-btn:hover { transform: scale(1.05); }
+        .instructions { color: #888; margin-top: 20px; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <button id="start-btn" onclick="startPresentation()">Start Presentation (Fullscreen)</button>
+
+    <div id="overlay">
+        <button id="start-btn" onclick="startPresentation()">START PRESENTATION</button>
+        <p class="instructions">Click to enter Fullscreen & Landscape mode</p>
+    </div>
 
     <div class="reveal">
         <div class="slides" id="dynamic-slides">
@@ -27,46 +58,79 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/dist/reveal.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.5.0/plugin/math/math.js"></script>
+
     <script>
+        // --- 1. SET YOUR CSV URL HERE ---
         const sheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRNkl2LsAPhuRetdCsejtmCGftxe1AuzVxjpxbICCdLk5VLuuOMXV_Uz44L0c5Fh5eiZixdi8cMU1fC/pub?output=csv';
 
-        function startPresentation() {
-            document.documentElement.requestFullscreen();
-            document.getElementById('start-btn').style.display = 'none';
-            loadSlides();
+        async function startPresentation() {
+            // Request Fullscreen
+            if (document.documentElement.requestFullscreen) {
+                await document.documentElement.requestFullscreen();
+            }
+            
+            // Hide Overlay
+            document.getElementById('overlay').style.display = 'none';
+            
+            // Load and Init
+            await loadSlides();
         }
 
         async function loadSlides() {
-            const response = await fetch(sheetUrl);
-            const data = await response.text();
-            const rows = data.split('\n').slice(1);
-            const container = document.getElementById('dynamic-slides');
-            
-            rows.forEach(row => {
-                const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
-                if (cols.length < 2) return;
-                const [type, content, imgUrl] = cols.map(c => c.replace(/"/g, '').trim());
+            try {
+                const response = await fetch(sheetUrl);
+                const csvData = await response.text();
                 
-                const section = document.createElement('section');
-                // Auto-style bold text with our highlight color
-                let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+                // Parse CSV rows
+                const rows = csvData.split(/\r?\n/).slice(1);
+                const container = document.getElementById('dynamic-slides');
+                container.innerHTML = ''; 
 
-                if (type === "Math") {
-                    section.innerHTML = `<h2>\\[ ${content} \\]</h2>`;
-                } else if (type === "Title") {
-                    section.innerHTML = `<h1 style="font-size: 4em; color: #42afe3;">${formattedContent}</h1>`;
-                } else {
-                    section.innerHTML = `<h2>${formattedContent}</h2>`;
-                }
-                container.appendChild(section);
-            });
+                rows.forEach(row => {
+                    // Regex to handle commas inside quotes (standard CSV parsing)
+                    const cols = row.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    if (cols.length < 2) return;
 
-            Reveal.initialize({
-                hash: true,
-                transition: 'none', 
-                center: true,
-                plugins: [ RevealMath.MathJax2 ]
-            });
+                    let [type, content, imgUrl] = cols.map(c => c.replace(/^"|"$/g, '').trim());
+                    
+                    const section = document.createElement('section');
+                    
+                    // Format bold text for all slide types
+                    let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<span class="highlight">$1</span>');
+
+                    if (type === "Image") {
+                        section.innerHTML = `
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <img src="${imgUrl}" class="slide-image" onerror="this.src='https://via.placeholder.com/800x450?text=Image+Not+Found'">
+                                <h3 style="margin-top:25px;">${formattedContent}</h3>
+                            </div>`;
+                    } else if (type === "Math") {
+                        section.innerHTML = `<h2>\\[ ${content} \\]</h2>`;
+                    } else if (type === "Title") {
+                        section.innerHTML = `<h1>${formattedContent}</h1>`;
+                    } else {
+                        // Default Text Slide
+                        section.innerHTML = `<h2>${formattedContent}</h2>`;
+                    }
+                    
+                    container.appendChild(section);
+                });
+
+                // Initialize Reveal.js
+                Reveal.initialize({
+                    controls: false,   // Cleaner look for Lessig style
+                    progress: true,
+                    center: true,
+                    hash: true,
+                    transition: 'none', // Critical for the Lessig/Takahashi effect
+                    plugins: [ RevealMath.MathJax2 ]
+                });
+
+            } catch (error) {
+                console.error("Error loading CSV:", error);
+                alert("Could not load Google Sheet. Ensure it is Published to Web as CSV.");
+            }
         }
     </script>
 </body>

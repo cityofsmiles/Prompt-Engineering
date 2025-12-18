@@ -1,0 +1,171 @@
+\documentclass[14pt]{beamer}
+\usetheme{default}
+\usecolortheme{dove} % Clean, white background
+\setbeamertemplate{navigation symbols}{} % Remove clutter
+
+% High-impact font settings
+\usepackage{helvet}
+\renewcommand{\familydefault}{\sfdefault}
+
+\begin{document}
+
+% --- SLIDE 1: The Hook ---
+\begin{frame}
+    \centering
+    \Huge \textbf{AI in the Math Class}
+\end{frame}
+
+% --- SLIDE 2: The Fear ---
+\begin{frame}
+    \centering
+    \Huge \textit{"It just gives the answer."}
+\end{frame}
+
+% --- SLIDE 3: The Reality ---
+\begin{frame}
+    \centering
+    \Huge \textbf{Wrong.}
+\end{frame}
+
+% --- SLIDE 4: The Analogy ---
+\begin{frame}
+    \centering
+    \Large It’s not a calculator.\\
+    \vspace{1cm}
+    \Huge It’s a \textbf{Tutor.}
+\end{frame}
+
+% --- SLIDE 5: Prompt Engineering ---
+\begin{frame}
+    \centering
+    \Huge \textbf{Prompt Engineering}
+\end{frame}
+
+% --- SLIDE 6: Definition ---
+\begin{frame}
+    \centering
+    \Large The art of \textbf{Context}.
+\end{frame}
+
+% --- SLIDE 7: Example Problem ---
+\begin{frame}
+    \centering
+    \Large Solve for $x$: \\
+    \vspace{0.5cm}
+    $2x^2 - 4x - 6 = 0$
+\end{frame}
+
+% --- SLIDE 8: Bad Prompt ---
+\begin{frame}
+    \centering
+    \small \texttt{"Solve this equation."}
+\end{frame}
+
+% --- SLIDE 9: Bad Output ---
+\begin{frame}
+    \centering
+    \Huge \textbf{X = 3, -1} \\
+    \large (No explanation)
+\end{frame}
+
+% --- SLIDE 10: The Lessig "Echo" ---
+\begin{frame}
+    \centering
+    \Huge \textbf{Better Context}
+\end{frame}
+
+% --- SLIDE 11: Role Prompting ---
+\begin{frame}
+    \centering
+    \Large "Act as a \textbf{Socratic Tutor}."
+\end{frame}
+
+% --- SECTION: ROLE PROMPTING ---
+\begin{frame}
+    \centering
+    \Huge \textbf{1. Role Prompting}
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large "You are an \textbf{expert examiner}."
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large Create a rubric for a \\ \textbf{Calculus} project.
+\end{frame}
+
+% --- SECTION: FEW-SHOT LEARNING ---
+\begin{frame}
+    \centering
+    \Huge \textbf{2. Few-Shot Learning}
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large Give the AI \textbf{Examples}.
+\end{frame}
+
+\begin{frame}
+    \centering
+    \small 
+    Q: Solve $3x = 12$. A: $x=4$ \\
+    \vspace{0.3cm}
+    Q: Solve $5x = 25$. A: $x=5$ \\
+    \vspace{0.3cm}
+    \Huge \textbf{Model the logic.}
+\end{frame}
+
+% --- SECTION: CHAIN OF THOUGHT ---
+\begin{frame}
+    \centering
+    \Huge \textbf{3. Chain-of-Thought}
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large "Think \textbf{step-by-step}."
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large Force the LLM to verify \\ \textbf{intermediate} steps.
+\end{frame}
+
+\begin{frame}
+    \centering
+    \Large Avoid the "Hallucination" of \\ \textbf{Arithmetic Errors}.
+\end{frame}
+
+% --- SLIDE 12: Chain of Thought ---
+\begin{frame}
+    \centering
+    \Large "Explain the \textbf{Quadratic Formula} step-by-step."
+\end{frame}
+
+% --- SLIDE 13: Mathematical Formatting ---
+\begin{frame}
+    \centering
+    \Large Use \textbf{LaTeX} output only.
+\end{frame}
+
+% --- SLIDE 14: The Formula ---
+\begin{frame}
+    \centering
+    $$x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$$
+\end{frame}
+
+% --- SLIDE 15: Constraint ---
+\begin{frame}
+    \centering
+    \Large "Don't give the answer... \\ \textbf{guide} the student."
+\end{frame}
+
+% --- SLIDE 16: Closing ---
+\begin{frame}
+    \centering
+    \Huge \textbf{Empower} your students.
+\end{frame}
+
+\end{document}
